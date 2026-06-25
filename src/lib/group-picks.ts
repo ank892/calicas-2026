@@ -96,14 +96,16 @@ export async function saveGroupPick(p: {
   return {};
 }
 
-// Determina si el grupo ya está cerrado para pronósticos (primer partido a < 30 min).
+// Determina si el grupo ya está cerrado para pronósticos.
+// Cierre = inicio de los últimos 2 partidos (matchday 3) − 30 min.
 export function isGroupLocked(matches: Match[], group: string, lockBeforeMs = 30 * 60 * 1000): boolean {
-  const first = matches
-    .filter((m) => m.group_letter === group && m.phase === "group" && m.kickoff_utc)
-    .map((m) => new Date(m.kickoff_utc as string).getTime())
-    .sort((a, b) => a - b)[0];
-  if (!first) return false;
-  return Date.now() >= first - lockBeforeMs;
+  const groupMatches = matches.filter((m) => m.group_letter === group && m.phase === "group" && m.kickoff_utc);
+  if (groupMatches.length === 0) return false;
+  const maxMd = Math.max(...groupMatches.map((m) => m.matchday ?? 0));
+  if (maxMd === 0) return false;
+  const lastRound = groupMatches.filter((m) => (m.matchday ?? 0) === maxMd);
+  const lockTime = Math.min(...lastRound.map((m) => new Date(m.kickoff_utc as string).getTime()));
+  return Date.now() >= lockTime - lockBeforeMs;
 }
 
 // Re-evalúa todos los group_picks cuando la fase de grupos terminó.
