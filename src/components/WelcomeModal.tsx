@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ClanManager } from "./ClanManager";
 
-const STORAGE_KEY = "calicas-onboarding-v2-seen";
+const STORAGE_KEY = "calicas-onboarding-v3-seen";
 
 // Modal de bienvenida que se muestra una sola vez para introducir
 // las mejoras nuevas (banderas, clanes, batalla de clanes).
@@ -28,10 +28,10 @@ export function WelcomeModal() {
       <div className="card w-full max-w-md max-h-[90dvh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden">
         <div className="csh-stripe h-1.5 w-full" />
         <div className="p-4 border-b border-[var(--border)]">
-          <div className="text-[10px] font-bold tracking-[0.2em] text-csh-yellow">NOVEDADES</div>
+          <div className="text-[10px] font-bold tracking-[0.2em] text-csh-yellow">NOVEDADES v3</div>
           <div className="text-lg font-black">
             <span className="text-csh-red">CALICAS</span>{" "}
-            <span className="text-csh-yellow">2026</span> ahora con clanes 🛡️
+            <span className="text-csh-yellow">2026</span> 🎯
           </div>
         </div>
 
@@ -39,19 +39,19 @@ export function WelcomeModal() {
           <div className="space-y-2">
             <div className="font-bold">✨ Qué hay de nuevo</div>
             <ul className="space-y-1.5 text-[13px] text-[var(--muted)] list-disc pl-5">
-              <li>🇨🇷 <b className="text-[var(--text)]">Banderas</b> al lado de cada selección.</li>
-              <li>🛡️ <b className="text-[var(--text)]">Clanes</b>: agrupate hasta en 2 clanes y compitan entre ustedes.</li>
-              <li>📊 <b className="text-[var(--text)]">Filtro por clan</b> en la Tabla y en los pronósticos de cada juego.</li>
-              <li>⚔️ <b className="text-[var(--text)]">Batalla de Clanes</b>: ranking normalizado para ver qué clan manda.</li>
+              <li>📊 <b className="text-[var(--text)]">Tabla del grupo</b> en cada partido: tocá el badge <b>G{"{X}"} 📊</b> para ver posiciones y últimos resultados de los equipos.</li>
+              <li>🎯 <b className="text-[var(--text)]">Bonus de grupos</b>: pronosticá 1ro (5 pts), 2do (3 pts) y mejor 3ro (4 pts) de cada grupo. Botón rojo en la sección de Partidos.</li>
+              <li>📧 <b className="text-[var(--text)]">Recordatorios por correo</b>: si te falta un pronóstico para un partido del día siguiente, te llega un email automático.</li>
+              <li>🛡️ <b className="text-[var(--text)]">Hasta 4 clanes</b> por usuario (antes eran 2).</li>
             </ul>
           </div>
 
           <div className="h-px bg-[var(--border)]" />
 
           <div>
-            <div className="font-bold mb-2">🛡️ Crea o unite a un clan</div>
+            <div className="font-bold mb-2">🛡️ Revisá tus clanes</div>
             <div className="text-[11px] text-[var(--muted)] mb-3">
-              Podés saltarte este paso y crearlos luego desde tu Perfil.
+              Podés crear o unirte a hasta 4 clanes. También desde tu Perfil.
             </div>
             <ClanManager compact />
           </div>

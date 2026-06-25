@@ -5,6 +5,8 @@ import {
 } from "@/lib/worldcup-api";
 import { parseKickoffToUTC } from "@/lib/time";
 import { scorePrediction } from "@/lib/scoring";
+import { computeGroupResults, isGroupStageComplete, type Match } from "@/lib/standings";
+import { scoreGroupPick } from "@/lib/group-picks";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,10 +99,14 @@ async function doSync() {
     // 3) Calcular ganadores por fase para fases ya cerradas
     await refreshPhaseWinners(sb);
 
+    // 4) Recalcular group picks si la fase de grupos ya terminó
+    const groupPicksUpdated = await refreshGroupPickPoints(sb, rows as unknown as Match[]);
+
     return NextResponse.json({
       ok: true,
       synced_matches: rows.length,
       updated_predictions: updatedPredictions,
+      updated_group_picks: groupPicksUpdated,
       timestamp: new Date().toISOString(),
     });
   } catch (e) {
@@ -149,4 +155,27 @@ async function refreshPhaseWinners(sb: ReturnType<typeof getServerSupabase>) {
       );
     }
   }
+}
+
+async function refreshGroupPickPoints(sb: ReturnType<typeof getServerSupabase>, matches: Match[]): Promise<number> {
+  if (!isGroupStageComplete(matches)) return 0;
+  const { data: picks } = await sb
+    .from("ed26_calicas_group_picks")
+    .select("user_id, group_letter, first_team, second_team, third_qualifier_team, points");
+  if (!picks?.length) return 0;
+  const { groups, bestThirds } = computeGroupResults(matches);
+  let updated = 0;
+  for (const p of picks as { user_id: string; group_letter: string; first_team: string; second_team: string; third_qualifier_team: string | null; points: number }[]) {
+    const res = groups.get(p.group_letter);
+    if (!res) continue;
+    const newPts = scoreGroupPick(p, res, bestThirds);
+    if (newPts !== p.points) {
+      await sb.from("ed26_calicas_group_picks")
+        .update({ points: newPts })
+        .eq("user_id", p.user_id)
+        .eq("group_letter", p.group_letter);
+      updated++;
+    }
+  }
+  return updated;
 }

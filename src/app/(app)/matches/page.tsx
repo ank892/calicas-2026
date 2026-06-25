@@ -6,6 +6,8 @@ import { getLocalUser } from "@/lib/session";
 import { formatCR, formatCRDateOnly, crDateKey } from "@/lib/time";
 import { PHASES, PHASE_LABELS, scorePrediction } from "@/lib/scoring";
 import { PredictionsModal } from "@/components/PredictionsModal";
+import { StandingsModal } from "@/components/StandingsModal";
+import { GroupPicksModal } from "@/components/GroupPicksModal";
 import { flagFor } from "@/lib/flags";
 
 type Match = {
@@ -29,6 +31,8 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [activePhase, setActivePhase] = useState<string>("group");
   const [openMatch, setOpenMatch] = useState<Match | null>(null);
+  const [openStandings, setOpenStandings] = useState<{ group: string; home?: string; away?: string } | null>(null);
+  const [openGroupPicks, setOpenGroupPicks] = useState(false);
   const [didAutoFocus, setDidAutoFocus] = useState(false);
   const dateRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const scrolledForPhase = useRef<string | null>(null);
@@ -201,12 +205,20 @@ export default function MatchesPage() {
           <div className="text-[11px] text-[var(--muted)] uppercase tracking-widest font-bold">
             {PHASE_LABELS[activePhase]} · {phaseInfo.finished}/{phaseInfo.total} jugados
           </div>
-          {targetDateLabelByPhase.get(activePhase) && (
-            <button onClick={jumpToToday}
-              className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-csh-yellow text-csh-yellow bg-[rgba(255,221,0,0.08)] active:scale-95 transition">
-              ↓ Hoy
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {activePhase === "group" && (
+              <button onClick={() => setOpenGroupPicks(true)}
+                className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-csh-red text-white bg-csh-red active:scale-95 transition">
+                🎯 Bonus de grupos
+              </button>
+            )}
+            {targetDateLabelByPhase.get(activePhase) && (
+              <button onClick={jumpToToday}
+                className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-csh-yellow text-csh-yellow bg-[rgba(255,221,0,0.08)] active:scale-95 transition">
+                ↓ Hoy
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -223,7 +235,9 @@ export default function MatchesPage() {
               {isToday && <span className="px-1.5 py-0.5 rounded-full bg-csh-red text-white text-[9px] tracking-wider">HOY</span>}
             </div>
             {list.map((m) => (
-              <MatchCard key={m.id} m={m} pred={predMap.get(m.id)} onSaved={load} onOpenPredictions={() => setOpenMatch(m)} />
+              <MatchCard key={m.id} m={m} pred={predMap.get(m.id)} onSaved={load}
+                onOpenPredictions={() => setOpenMatch(m)}
+                onOpenStandings={() => m.group_letter && setOpenStandings({ group: m.group_letter, home: m.home_team_name, away: m.away_team_name })} />
             ))}
           </div>
         );
@@ -234,12 +248,14 @@ export default function MatchesPage() {
       )}
 
       {openMatch && <PredictionsModal match={openMatch} onClose={() => setOpenMatch(null)} />}
+      {openStandings && <StandingsModal group={openStandings.group} homeTeam={openStandings.home} awayTeam={openStandings.away} onClose={() => setOpenStandings(null)} />}
+      {openGroupPicks && <GroupPicksModal matches={matches} onClose={() => setOpenGroupPicks(false)} />}
     </div>
   );
 }
 
-function MatchCard({ m, pred, onSaved, onOpenPredictions }: {
-  m: Match; pred?: Pred; onSaved: () => void; onOpenPredictions: () => void;
+function MatchCard({ m, pred, onSaved, onOpenPredictions, onOpenStandings }: {
+  m: Match; pred?: Pred; onSaved: () => void; onOpenPredictions: () => void; onOpenStandings: () => void;
 }) {
   const kickoff = m.kickoff_utc ? new Date(m.kickoff_utc) : null;
   const now = Date.now();
@@ -296,7 +312,11 @@ function MatchCard({ m, pred, onSaved, onOpenPredictions }: {
       <div className="flex items-center justify-between text-[11px]">
         <div className="text-[var(--muted)]">
           {kickoff ? formatCR(kickoff) : "—"} <span className="opacity-70">CR</span>
-          {m.group_letter && <span className="ml-2 text-csh-yellow font-bold">G{m.group_letter}</span>}
+          {m.group_letter && (
+            <button onClick={onOpenStandings} className="ml-2 text-csh-yellow font-bold hover:underline">
+              G{m.group_letter} 📊
+            </button>
+          )}
           {m.matchday && <span className="ml-2 text-[var(--muted)]">J{m.matchday}</span>}
         </div>
         {m.status === "live" ? (
