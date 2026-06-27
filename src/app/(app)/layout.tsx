@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getLocalUser, setLocalUser, type LocalUser } from "@/lib/session";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import { ChuncheDailyModal } from "@/components/ChuncheDailyModal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -73,6 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </nav>
 
       <WelcomeModal />
+      <ChuncheDailyModal />
     </div>
   );
 }
