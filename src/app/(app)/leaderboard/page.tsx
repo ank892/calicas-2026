@@ -26,17 +26,19 @@ export default function LeaderboardPage() {
   const [clanFilter, setClanFilter] = useState<string>("all");
   const [phasePoints, setPhasePoints] = useState<Map<string, Map<string, number>>>(new Map());
   const [selectedPhase, setSelectedPhase] = useState<string>("group");
+  const [didAutoFocusPhase, setDidAutoFocusPhase] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const me = getLocalUser();
-    const [{ data: lb }, { data: w }, { data: us }, { data: preds }, { data: gpicks }, ac, cm, mc] = await Promise.all([
+    const [{ data: lb }, { data: w }, { data: us }, { data: preds }, { data: gpicks }, { data: ms }, ac, cm, mc] = await Promise.all([
       supabase.from("ed26_calicas_leaderboard").select("*").order("total_points", { ascending: false }),
       supabase.from("ed26_calicas_phase_winners").select("phase, user_id, points"),
       supabase.from("ed26_calicas_users").select("id, display_name, avatar_emoji"),
       supabase.from("ed26_calicas_predictions").select("user_id, points, ed26_calicas_matches!inner(phase)"),
       supabase.from("ed26_calicas_group_picks").select("user_id, points"),
+      supabase.from("ed26_calicas_matches").select("phase, status, finished, kickoff_utc"),
       fetchAllClans(),
       fetchClanMembers(),
       me ? fetchUserClans(me.id) : Promise.resolve([] as ClanMembership[]),
@@ -60,6 +62,40 @@ export default function LeaderboardPage() {
       groupMap.set(g.user_id, (groupMap.get(g.user_id) ?? 0) + (g.points ?? 0));
     }
     setPhasePoints(pp);
+
+    // Auto-focus en la fase vigente la primera vez que carga.
+    setDidAutoFocusPhase((prev) => {
+      if (prev) return prev;
+      const matches = (ms as Array<{ phase: string; status: string; finished: boolean; kickoff_utc: string | null }>) ?? [];
+      if (matches.length === 0) return prev;
+      const now = Date.now();
+      const idxOf = (ph: string) => PHASES.indexOf(ph as (typeof PHASES)[number]);
+
+      // 1) fase con algun partido en vivo
+      let chosen: string | null = null;
+      const liveMatch = matches.find((m) => m.status === "live");
+      if (liveMatch) chosen = liveMatch.phase;
+
+      // 2) fase del proximo partido aun no jugado
+      if (!chosen) {
+        const upcoming = matches
+          .filter((m) => !m.finished && m.kickoff_utc && new Date(m.kickoff_utc).getTime() >= now)
+          .sort((a, b) => new Date(a.kickoff_utc!).getTime() - new Date(b.kickoff_utc!).getTime());
+        if (upcoming.length > 0) chosen = upcoming[0].phase;
+      }
+
+      // 3) ultima fase con al menos un partido finalizado
+      if (!chosen) {
+        const finishedPhases = matches.filter((m) => m.finished).map((m) => m.phase);
+        if (finishedPhases.length > 0) {
+          chosen = finishedPhases.reduce((a, b) => (idxOf(b) > idxOf(a) ? b : a));
+        }
+      }
+
+      if (chosen && idxOf(chosen) >= 0) setSelectedPhase(chosen);
+      return true;
+    });
+
     setLoading(false);
   }, []);
 
