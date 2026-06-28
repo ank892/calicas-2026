@@ -133,60 +133,11 @@ export default function LeaderboardPage() {
     <div className="space-y-5">
       <section>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <h2 className="text-sm font-black uppercase tracking-widest">🏆 Tabla Acumulada</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest">📊 Tabla por Fase</h2>
           {myClans.length > 0 && (
             <ClanFilter clans={myClans} value={clanFilter} onChange={setClanFilter} />
           )}
         </div>
-
-        {clanFilter !== "all" && me && myPosition > 0 && (
-          <div className="text-[11px] text-csh-yellow font-bold mb-2">
-            🛡️ {filterLabel} · Tu posición: <b>#{myPosition}</b> de {filteredRows.length}
-          </div>
-        )}
-        {clanFilter === "all" && me && myPosition > 0 && (
-          <div className="text-[11px] text-[var(--muted)] mb-2">
-            🌎 Tu posición global: <b className="text-csh-yellow">#{myPosition}</b> de {filteredRows.length}
-          </div>
-        )}
-
-        {loading && <div className="text-sm text-[var(--muted)]">Cargando…</div>}
-        <div className="card overflow-hidden">
-          {filteredRows.map((r, i) => {
-            const isMe = me?.id === r.user_id;
-            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-            return (
-              <div key={r.user_id}
-                className={`flex items-center gap-3 px-3 py-2.5 border-b border-[var(--border)] last:border-b-0 ${isMe ? "bg-[rgba(255,212,0,0.08)]" : ""}`}>
-                <div className={`w-8 text-center font-black tabular-nums ${i < 3 ? "text-csh-yellow" : "text-[var(--muted)]"}`}>
-                  {medal || `#${i + 1}`}
-                </div>
-                <div className="text-2xl">{r.avatar_emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold truncate">
-                    {r.display_name}{isMe && <span className="ml-2 text-[10px] text-csh-yellow">(tú)</span>}
-                  </div>
-                  <div className="text-[11px] text-[var(--muted)]">
-                    🎯 {r.exactos} · ✅ {r.parciales + r.resultados} · ❌ {r.fallos}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-black text-csh-yellow tabular-nums">{r.total_points}</div>
-                  <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider">pts</div>
-                </div>
-              </div>
-            );
-          })}
-          {!loading && filteredRows.length === 0 && (
-            <div className="p-4 text-sm text-[var(--muted)] text-center">
-              {clanFilter === "all" ? "Aún no hay participantes." : "Este clan no tiene miembros aún."}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-black uppercase tracking-widest mb-2">📊 Tabla por Fase</h2>
         <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-2 scrollbar-none">
           {PHASES.map((ph) => {
             const active = selectedPhase === ph;
@@ -251,6 +202,55 @@ export default function LeaderboardPage() {
             Incluye los puntos de cada partido + el bonus por predecir 1ro/2do/mejor 3ro.
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-widest mb-2">🏆 Tabla Acumulada</h2>
+
+        {clanFilter !== "all" && me && myPosition > 0 && (
+          <div className="text-[11px] text-csh-yellow font-bold mb-2">
+            🛡️ {filterLabel} · Tu posición: <b>#{myPosition}</b> de {filteredRows.length}
+          </div>
+        )}
+        {clanFilter === "all" && me && myPosition > 0 && (
+          <div className="text-[11px] text-[var(--muted)] mb-2">
+            🌎 Tu posición global: <b className="text-csh-yellow">#{myPosition}</b> de {filteredRows.length}
+          </div>
+        )}
+
+        {loading && <div className="text-sm text-[var(--muted)]">Cargando…</div>}
+        <div className="card overflow-hidden">
+          {filteredRows.map((r, i) => {
+            const isMe = me?.id === r.user_id;
+            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+            return (
+              <div key={r.user_id}
+                className={`flex items-center gap-3 px-3 py-2.5 border-b border-[var(--border)] last:border-b-0 ${isMe ? "bg-[rgba(255,212,0,0.08)]" : ""}`}>
+                <div className={`w-8 text-center font-black tabular-nums ${i < 3 ? "text-csh-yellow" : "text-[var(--muted)]"}`}>
+                  {medal || `#${i + 1}`}
+                </div>
+                <div className="text-2xl">{r.avatar_emoji}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold truncate">
+                    {r.display_name}{isMe && <span className="ml-2 text-[10px] text-csh-yellow">(tú)</span>}
+                  </div>
+                  <div className="text-[11px] text-[var(--muted)]">
+                    🎯 {r.exactos} · ✅ {r.parciales + r.resultados} · ❌ {r.fallos}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-black text-csh-yellow tabular-nums">{r.total_points}</div>
+                  <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider">pts</div>
+                </div>
+              </div>
+            );
+          })}
+          {!loading && filteredRows.length === 0 && (
+            <div className="p-4 text-sm text-[var(--muted)] text-center">
+              {clanFilter === "all" ? "Aún no hay participantes." : "Este clan no tiene miembros aún."}
+            </div>
+          )}
+        </div>
       </section>
 
       <section>
