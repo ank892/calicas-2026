@@ -62,12 +62,12 @@ export async function fetchTeams(): Promise<unknown[]> {
 export function normalizePhase(type: string): string {
   const t = (type || "").toLowerCase().replace(/\s+/g, "_");
   if (t === "group" || t === "groups") return "group";
-  if (t.includes("32")) return "round_of_32";
-  if (t.includes("16") || t.includes("eighth") || t === "octavos") return "round_of_16";
-  if (t.includes("quarter")) return "quarter_final";
-  if (t.includes("semi")) return "semi_final";
-  if (t.includes("third")) return "third_place";
-  if (t === "final") return "final";
+  if (t.includes("32") || t === "r32") return "round_of_32";
+  if (t.includes("16") || t.includes("eighth") || t === "octavos" || t === "r16") return "round_of_16";
+  if (t.includes("quarter") || t === "qf") return "quarter_final";
+  if (t.includes("semi") || t === "sf") return "semi_final";
+  if (t.includes("third") || t === "3rd") return "third_place";
+  if (t === "final" || t === "f") return "final";
   return t || "group";
 }
 

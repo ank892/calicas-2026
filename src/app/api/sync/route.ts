@@ -72,15 +72,25 @@ async function doSync() {
 
     if (finishedMatches.length) {
       const matchIds = finishedMatches.map((m) => m.id);
-      const { data: preds, error: pErr } = await sb
-        .from("ed26_calicas_predictions")
-        .select("id, match_id, pred_home, pred_away, points")
-        .in("match_id", matchIds);
-      if (pErr) throw pErr;
+      // Batch fetch — Supabase corta a 1000 filas por default y con 100+ partidos
+      // terminados el total de predicciones excede ese limite, dejando fases
+      // como octavos sin recalcular.
+      const CHUNK = 20;
+      const allPreds: { id: string; match_id: string; pred_home: number; pred_away: number; points: number }[] = [];
+      for (let i = 0; i < matchIds.length; i += CHUNK) {
+        const chunkIds = matchIds.slice(i, i + CHUNK);
+        const { data: chunk, error: pErr } = await sb
+          .from("ed26_calicas_predictions")
+          .select("id, match_id, pred_home, pred_away, points")
+          .in("match_id", chunkIds)
+          .limit(10000);
+        if (pErr) throw pErr;
+        if (chunk) allPreds.push(...chunk);
+      }
 
       const byId = new Map(finishedMatches.map((m) => [m.id, m]));
       const updates: { id: string; points: number }[] = [];
-      for (const p of preds ?? []) {
+      for (const p of allPreds) {
         const m = byId.get(p.match_id);
         if (!m) continue;
         const newPoints = scorePrediction(
