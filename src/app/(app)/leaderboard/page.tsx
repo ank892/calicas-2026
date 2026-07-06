@@ -32,11 +32,30 @@ export default function LeaderboardPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const me = getLocalUser();
-    const [{ data: lb }, { data: w }, { data: us }, { data: preds }, { data: gpicks }, { data: ms }, ac, cm, mc] = await Promise.all([
+
+    // Paginado explicito de predictions para evitar el limite de 1000 filas
+    // del PostgREST default (con 100+ partidos terminados el total excede eso
+    // y hace que fases enteras aparezcan en 0 puntos).
+    async function fetchAllPredictions(): Promise<PredRow[]> {
+      const PAGE = 1000;
+      const out: PredRow[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data } = await supabase
+          .from("ed26_calicas_predictions")
+          .select("user_id, points, ed26_calicas_matches!inner(phase)")
+          .range(from, from + PAGE - 1);
+        const rows = (data as unknown as PredRow[]) ?? [];
+        out.push(...rows);
+        if (rows.length < PAGE) break;
+      }
+      return out;
+    }
+
+    const [{ data: lb }, { data: w }, { data: us }, preds, { data: gpicks }, { data: ms }, ac, cm, mc] = await Promise.all([
       supabase.from("ed26_calicas_leaderboard").select("*").order("total_points", { ascending: false }),
       supabase.from("ed26_calicas_phase_winners").select("phase, user_id, points"),
       supabase.from("ed26_calicas_users").select("id, display_name, avatar_emoji"),
-      supabase.from("ed26_calicas_predictions").select("user_id, points, ed26_calicas_matches!inner(phase)"),
+      fetchAllPredictions(),
       supabase.from("ed26_calicas_group_picks").select("user_id, points"),
       supabase.from("ed26_calicas_matches").select("phase, status, finished, kickoff_utc"),
       fetchAllClans(),
@@ -51,7 +70,7 @@ export default function LeaderboardPage() {
     // Suma puntos por fase y por usuario (predictions + bonus de grupos)
     const pp = new Map<string, Map<string, number>>();
     for (const ph of PHASES) pp.set(ph, new Map());
-    for (const p of ((preds as unknown as PredRow[]) ?? [])) {
+    for (const p of preds) {
       const ph = p.ed26_calicas_matches?.phase;
       if (!ph || !pp.has(ph)) continue;
       const m = pp.get(ph)!;

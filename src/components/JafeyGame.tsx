@@ -100,18 +100,57 @@ export function JafeyGame() {
     };
   }, [screen, levelIndex, persistResult]);
 
-  // Touch button helpers
-  const setKey = (k: keyof GameInput, v: boolean) => {
-    inputRef.current[k] = v;
+  // Controles con pointer events + captura para que el touch no se quede pegado.
+  // Guardamos un contador por accion (si dos pointers presionan a la vez).
+  const pressCount = useRef<Record<keyof GameInput, number>>({ left: 0, right: 0, jump: 0 });
+  const setKey = (k: keyof GameInput, delta: number) => {
+    const next = Math.max(0, pressCount.current[k] + delta);
+    pressCount.current[k] = next;
+    inputRef.current[k] = next > 0;
+  };
+  const clearAll = () => {
+    (["left", "right", "jump"] as const).forEach((k) => {
+      pressCount.current[k] = 0;
+      inputRef.current[k] = false;
+    });
   };
   const btnProps = (k: keyof GameInput) => ({
-    onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); setKey(k, true); },
-    onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); setKey(k, false); },
-    onTouchCancel: () => setKey(k, false),
-    onMouseDown: () => setKey(k, true),
-    onMouseUp: () => setKey(k, false),
-    onMouseLeave: () => setKey(k, false),
+    onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+      setKey(k, +1);
+    },
+    onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+      setKey(k, -1);
+    },
+    onPointerCancel: (e: React.PointerEvent<HTMLButtonElement>) => {
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+      setKey(k, -1);
+    },
+    onLostPointerCapture: () => setKey(k, -1),
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
+
+  // Salvavidas: si el usuario suelta fuera del boton o cambia de pestana,
+  // limpiamos todo. Sin esto el boton se queda "trabado".
+  useEffect(() => {
+    if (screen !== "playing") return;
+    const onGlobalUp = () => clearAll();
+    const onBlur = () => clearAll();
+    const onVis = () => { if (document.hidden) clearAll(); };
+    window.addEventListener("pointerup", onGlobalUp);
+    window.addEventListener("pointercancel", onGlobalUp);
+    window.addEventListener("blur", onBlur);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pointerup", onGlobalUp);
+      window.removeEventListener("pointercancel", onGlobalUp);
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [screen]);
 
   if (screen === "menu") {
     return (
@@ -168,41 +207,56 @@ export function JafeyGame() {
   if (screen === "playing") {
     return (
       <div className="space-y-3">
-        <div className="rounded-xl overflow-hidden border-2 border-csh-red bg-black relative touch-none select-none">
+        <div className="rounded-xl overflow-hidden border-2 border-csh-red bg-black relative select-none">
           <canvas
             ref={canvasRef}
             width={320}
             height={200}
             className="w-full h-auto block"
-            style={{ imageRendering: "pixelated" }}
+            style={{ imageRendering: "pixelated", touchAction: "none" }}
           />
         </div>
 
-        {/* Controles tactiles */}
-        <div className="grid grid-cols-3 gap-2 select-none">
-          <button
-            {...btnProps("left")}
-            className="rounded-2xl bg-csh-red text-white text-2xl font-black py-5 active:bg-red-700 shadow-lg border-b-4 border-red-900"
-          >
-            ◀
-          </button>
-          <button
-            {...btnProps("right")}
-            className="rounded-2xl bg-csh-red text-white text-2xl font-black py-5 active:bg-red-700 shadow-lg border-b-4 border-red-900"
-          >
-            ▶
-          </button>
+        {/* Controles fijos abajo, dedos gordos friendly */}
+        <div
+          className="fixed bottom-16 left-0 right-0 z-40 flex items-end justify-between px-4 pointer-events-none"
+          style={{ touchAction: "none" }}
+        >
+          <div className="flex gap-3 pointer-events-auto">
+            <button
+              {...btnProps("left")}
+              aria-label="Izquierda"
+              className="w-16 h-16 rounded-full bg-csh-red text-white text-3xl font-black shadow-2xl border-b-4 border-red-900 active:scale-95 active:bg-red-700"
+              style={{ touchAction: "none" }}
+            >
+              ◀
+            </button>
+            <button
+              {...btnProps("right")}
+              aria-label="Derecha"
+              className="w-16 h-16 rounded-full bg-csh-red text-white text-3xl font-black shadow-2xl border-b-4 border-red-900 active:scale-95 active:bg-red-700"
+              style={{ touchAction: "none" }}
+            >
+              ▶
+            </button>
+          </div>
           <button
             {...btnProps("jump")}
-            className="rounded-2xl bg-csh-yellow text-black text-2xl font-black py-5 active:bg-yellow-400 shadow-lg border-b-4 border-yellow-700"
+            aria-label="Saltar"
+            className="w-20 h-20 rounded-full bg-csh-yellow text-black text-4xl font-black shadow-2xl border-b-4 border-yellow-700 active:scale-95 active:bg-yellow-300 pointer-events-auto"
+            style={{ touchAction: "none" }}
           >
             🦘
           </button>
         </div>
 
+        <div className="text-[10px] text-[var(--muted)] text-center pt-1 pb-24">
+          Tip: soltar el 🦘 antes hace saltos más cortos. Tenés medio segundo de "coyote" al caer.
+        </div>
+
         <button
-          onClick={() => { engineRef.current?.stop(); setScreen("menu"); }}
-          className="btn-ghost w-full text-xs"
+          onClick={() => { engineRef.current?.stop(); clearAll(); setScreen("menu"); }}
+          className="btn-ghost w-full text-xs fixed bottom-2 left-0 right-0 max-w-sm mx-auto z-30"
         >
           ⏹ Salir al menú
         </button>

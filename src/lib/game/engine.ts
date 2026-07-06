@@ -54,6 +54,8 @@ export class GameEngine {
   state: "playing" | "won" | "died" | "timeout" = "playing";
   input: Input = { left: false, right: false, jump: false };
   prevJump = false;
+  jumpBuffer = 0;       // segundos que "recordamos" un pulso de salto
+  coyoteTime = 0;       // segundos con opcion a saltar despues de dejar el piso
   lastFrame = 0;
   raf = 0;
   onResult?: (r: GameResult) => void;
@@ -189,13 +191,21 @@ export class GameEngine {
     p.vx = ax * MOVE_SPEED;
     if (ax !== 0) p.facing = ax;
 
-    // Jump edge trigger
+    // Jump con buffer + coyote time (mucho mas amigable en tactil)
     const jumpPressed = this.input.jump && !this.prevJump;
     this.prevJump = this.input.jump;
-    if (jumpPressed && p.onGround) {
+    if (jumpPressed) this.jumpBuffer = 0.15;
+    this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
+    this.coyoteTime = p.onGround ? 0.12 : Math.max(0, this.coyoteTime - dt);
+    if (this.jumpBuffer > 0 && this.coyoteTime > 0) {
       p.vy = -JUMP_VEL;
       p.onGround = false;
+      this.jumpBuffer = 0;
+      this.coyoteTime = 0;
     }
+
+    // Salto variable: soltar el boton corta el salto
+    if (!this.input.jump && p.vy < -80) p.vy = -80;
 
     // Gravity
     p.vy = Math.min(p.vy + GRAVITY * dt, MAX_FALL);
