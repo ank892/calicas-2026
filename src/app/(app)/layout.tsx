@@ -37,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/dashboard", label: "Inicio", icon: "🏠" },
     { href: "/matches", label: "Partidos", icon: "⚽" },
     { href: "/leaderboard", label: "Tabla", icon: "🏆" },
+    { href: "/game", label: "Jafey", icon: "🎮" },
     { href: "/profile", label: "Perfil", icon: "👤" },
   ];
 
@@ -59,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1 px-4 py-4">{children}</main>
 
-      <nav className="tabbar fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4">
+      <nav className="tabbar fixed bottom-0 left-0 right-0 z-30 grid grid-cols-5">
         {tabs.map((t) => {
           const active = pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
           return (
