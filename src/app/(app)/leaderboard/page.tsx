@@ -6,6 +6,7 @@ import { getLocalUser } from "@/lib/session";
 import { PHASES, PHASE_LABELS } from "@/lib/scoring";
 import { ClanFilter } from "@/components/ClanFilter";
 import { fetchAllClans, fetchClanMembers, fetchUserClans, type Clan, type ClanMembership } from "@/lib/clans";
+import { GameLeaderboard } from "@/components/GameLeaderboard";
 
 type Row = {
   user_id: string; display_name: string; avatar_emoji: string;
@@ -376,6 +377,11 @@ export default function LeaderboardPage() {
             );
           })}
         </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-black uppercase tracking-widest mb-2">🎮 Top Minijuego Jafey</h2>
+        <GameLeaderboard users={users} meId={me?.id} />
       </section>
 
       <section className="card p-4 text-[11px] text-[var(--muted)] leading-relaxed">
