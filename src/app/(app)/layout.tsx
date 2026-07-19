@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getLocalUser, setLocalUser, type LocalUser } from "@/lib/session";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import { ChuncheDailyModal } from "@/components/ChuncheDailyModal";
+import { FinalBonusModal } from "@/components/FinalBonusModal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -33,13 +34,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace("/");
   }
 
-  const tabs = [
-    { href: "/dashboard", label: "Inicio", icon: "🏠" },
-    { href: "/matches", label: "Partidos", icon: "⚽" },
-    { href: "/leaderboard", label: "Tabla", icon: "🏆" },
-    { href: "/game", label: "Jafey", icon: "🎮" },
-    { href: "/profile", label: "Perfil", icon: "👤" },
-  ];
+  // Ventana de acceso a la Final: desde ahora hasta 3h después del kickoff
+  const FINAL_KICK_MS = Date.UTC(2026, 6, 19, 19, 0, 0);
+  const showFinalTab = Date.now() < FINAL_KICK_MS + 3 * 60 * 60 * 1000;
+
+  const tabs = showFinalTab
+    ? [
+        { href: "/dashboard", label: "Inicio", icon: "🏠" },
+        { href: "/matches", label: "Partidos", icon: "⚽" },
+        { href: "/final", label: "Final", icon: "🏆", highlight: true },
+        { href: "/leaderboard", label: "Tabla", icon: "📊" },
+        { href: "/profile", label: "Perfil", icon: "👤" },
+      ]
+    : [
+        { href: "/dashboard", label: "Inicio", icon: "🏠" },
+        { href: "/matches", label: "Partidos", icon: "⚽" },
+        { href: "/leaderboard", label: "Tabla", icon: "🏆" },
+        { href: "/game", label: "Jafey", icon: "🎮" },
+        { href: "/profile", label: "Perfil", icon: "👤" },
+      ];
 
   return (
     <div className="min-h-dvh flex flex-col pb-20">
@@ -63,11 +76,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <nav className="tabbar fixed bottom-0 left-0 right-0 z-30 grid grid-cols-5">
         {tabs.map((t) => {
           const active = pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
+          const highlight = (t as { highlight?: boolean }).highlight;
           return (
             <Link key={t.href} href={t.href}
-              className={`flex flex-col items-center justify-center py-2.5 text-[11px] font-semibold gap-0.5 ${active ? "text-csh-yellow" : "text-[var(--muted)]"}`}>
-              <span className="text-xl leading-none">{t.icon}</span>
-              <span>{t.label}</span>
+              className={`flex flex-col items-center justify-center py-2.5 text-[11px] font-semibold gap-0.5 ${
+                active ? "text-csh-yellow" : highlight ? "text-csh-red" : "text-[var(--muted)]"
+              }`}>
+              <span className={`text-xl leading-none ${highlight && !active ? "animate-pulse" : ""}`}>{t.icon}</span>
+              <span className={highlight ? "font-black" : ""}>{t.label}</span>
               {active && <span className="block w-6 h-[2px] bg-csh-yellow rounded-full" />}
             </Link>
           );
@@ -76,6 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <WelcomeModal />
       <ChuncheDailyModal />
+      <FinalBonusModal />
     </div>
   );
 }

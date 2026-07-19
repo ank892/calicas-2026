@@ -111,6 +111,8 @@ export default function Dashboard() {
         )}
       </section>
 
+      <FinalBonusBanner />
+
       {live.length > 0 && (
         <section>
           <h2 className="text-sm font-black uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -143,6 +145,44 @@ export default function Dashboard() {
 
       {openMatch && <PredictionsModal match={openMatch} onClose={() => setOpenMatch(null)} />}
     </div>
+  );
+}
+
+function FinalBonusBanner() {
+  const KICK_MS = Date.UTC(2026, 6, 19, 19, 0, 0);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  const diff = KICK_MS - now;
+  if (diff < -3 * 60 * 60 * 1000) return null;
+  const locked = diff <= 0;
+  const days = Math.max(0, Math.floor(diff / 86400000));
+  const hrs = Math.max(0, Math.floor((diff % 86400000) / 3600000));
+  const mins = Math.max(0, Math.floor((diff % 3600000) / 60000));
+  const secs = Math.max(0, Math.floor((diff % 60000) / 1000));
+  return (
+    <Link href="/final" className="block rounded-xl overflow-hidden border-2 border-csh-yellow active:scale-[0.99] transition"
+      style={{ background: "linear-gradient(135deg, rgba(207,20,43,0.35), rgba(255,212,0,0.25))" }}>
+      <div className="csh-stripe h-1" />
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black tracking-widest text-csh-yellow">🏆 BONUS FINAL</div>
+            <div className="text-base font-black mt-0.5">185 puntos extra en juego</div>
+            <div className="text-[11px] text-[var(--muted)] mt-0.5">🇪🇸 España vs Argentina 🇦🇷 · 19 jul · 13:00 CR</div>
+          </div>
+          <div className="text-right">
+            {locked
+              ? <div className="text-[10px] font-black text-csh-red">🔒 CERRADO</div>
+              : <>
+                  <div className="text-[9px] font-bold tracking-widest text-[var(--muted)]">CIERRA EN</div>
+                  <div className="text-xl font-black tabular-nums">
+                    {days > 0 ? `${days}d ${hrs}h` : `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`}
+                  </div>
+                </>}
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 
