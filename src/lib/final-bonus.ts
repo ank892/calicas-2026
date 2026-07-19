@@ -4,28 +4,40 @@
 
 export const FINAL_MATCH_ID = "104";
 
-// Plantillas simplificadas (top jugadores de campo, para dropdown de primer
-// goleador y MVP). No incluyen porteros porque marcar un porterazo se vería raro.
-// Se pueden editar si hay lesionados/suspensos.
+// Plantillas oficiales del Mundial 2026 (26 convocados por selección).
+// Fuente: anuncio oficial De la Fuente (25-may-2026) y Scaloni (28-may-2026).
+// Se incluyen todos los jugadores para dropdowns de "Primer goleador" y "MVP".
 export const SQUADS: Record<string, { flag: string; players: string[] }> = {
   Spain: {
     flag: "🇪🇸",
     players: [
-      "Lamine Yamal", "Nico Williams", "Mikel Merino", "Álvaro Morata",
-      "Rodri", "Pedri", "Fabián Ruiz", "Dani Olmo",
-      "Marc Cucurella", "Dani Carvajal", "Aymeric Laporte", "Robin Le Normand",
-      "Ferran Torres", "Mikel Oyarzabal", "Jesús Navas", "Fermín López",
-      "Álex Baena", "Álex Grimaldo", "Martín Zubimendi", "Bryan Zaragoza",
+      // Delanteros / creativos (más probables de anotar primero)
+      "Lamine Yamal", "Nico Williams", "Ferran Torres", "Mikel Oyarzabal",
+      "Dani Olmo", "Yeremy Pino", "Víctor Muñoz", "Borja Iglesias",
+      // Mediocampistas
+      "Pedri", "Rodri", "Mikel Merino", "Fabián Ruiz",
+      "Martín Zubimendi", "Gavi", "Álex Baena",
+      // Defensores
+      "Marc Cucurella", "Pedro Porro", "Aymeric Laporte", "Pau Cubarsí",
+      "Eric García", "Marcos Llorente", "Marc Pubill", "Alejandro Grimaldo",
+      // Porteros (raro pero posible como MVP)
+      "Unai Simón", "David Raya", "Joan García",
     ],
   },
   Argentina: {
     flag: "🇦🇷",
     players: [
-      "Lionel Messi", "Julián Álvarez", "Lautaro Martínez", "Ángel Di María",
+      // Delanteros / creativos
+      "Lionel Messi", "Julián Álvarez", "Lautaro Martínez", "Thiago Almada",
+      "Nicolás González", "Giuliano Simeone", "José Manuel López",
+      // Mediocampistas
       "Enzo Fernández", "Alexis Mac Allister", "Rodrigo De Paul", "Leandro Paredes",
-      "Cristian Romero", "Nicolás Otamendi", "Nahuel Molina", "Nicolás Tagliafico",
-      "Marcos Acuña", "Giovani Lo Celso", "Paulo Dybala", "Nicolás González",
-      "Ángel Correa", "Thiago Almada", "Alejandro Garnacho", "Franco Mastantuono",
+      "Giovani Lo Celso", "Exequiel Palacios", "Nicolás Paz", "Valentín Barco",
+      // Defensores
+      "Cristian Romero", "Lisandro Martínez", "Nicolás Otamendi", "Nahuel Molina",
+      "Nicolás Tagliafico", "Gonzalo Montiel", "Facundo Medina", "Marcos Senesi",
+      // Porteros
+      "Emiliano Martínez", "Gerónimo Rulli", "Juan Musso",
     ],
   },
 };
