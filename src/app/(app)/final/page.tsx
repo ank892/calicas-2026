@@ -105,6 +105,7 @@ export default function FinalPage() {
   // Si ya hay resultados calculados, mostramos breakdown
   const showResults = results && (results.btts !== null || results.first_scorer !== null);
   const scored = showResults ? scoreFinalPick(pick, results!) : null;
+  const breakdownMap = new Map((scored?.breakdown ?? []).map((b) => [b.key, b]));
 
   return (
     <div className="space-y-3 pb-8">
@@ -120,17 +121,28 @@ export default function FinalPage() {
             Cierra al kickoff · <b className="text-csh-yellow">{hoursLeft > 0 ? `${hoursLeft}h ` : ""}{minsLeft}min</b>
           </div>
         )}
-        {scored && (
-          <div className="mt-2 text-sm font-black">
-            🏅 Ganaste <span className="text-csh-yellow">{scored.total}</span> / {MAX_POINTS} pts
-          </div>
-        )}
       </div>
 
-      {/* Card de cada predicción */}
-      <SectionYesNo label="1. ¿Ambos equipos anotan?" points={10} value={pick.btts} onChange={(v) => set("btts", v)} disabled={isLocked} real={results?.btts} />
+      {scored && (
+        <div className="rounded-2xl overflow-hidden border-2 border-csh-yellow shadow-[0_0_40px_rgba(255,212,0,0.25)]">
+          <div className="p-5 text-center"
+            style={{ background: "linear-gradient(135deg, #CF142B 0%, #8B0F1F 50%, #FFD400 100%)" }}>
+            <div className="text-[10px] font-black tracking-[0.3em] text-white/90">TU PUNTAJE FINAL</div>
+            <div className="text-5xl font-black text-white mt-1 drop-shadow-lg tabular-nums">
+              {scored.total}
+              <span className="text-2xl text-white/70"> / {MAX_POINTS}</span>
+            </div>
+            <div className="text-[11px] text-white/90 mt-1 font-bold">
+              {scored.breakdown.filter((b) => b.points > 0).length} de {scored.breakdown.length} predicciones acertadas
+            </div>
+          </div>
+        </div>
+      )}
 
-      <Section label="2. Primer goleador del partido" points={25} real={results?.first_scorer} realLabel={(v) => v === "no_goal" ? "Sin goles" : String(v)}>
+      {/* Card de cada predicción */}
+      <SectionYesNo label="1. ¿Ambos equipos anotan?" points={10} value={pick.btts} onChange={(v) => set("btts", v)} disabled={isLocked} real={results?.btts} score={breakdownMap.get("btts")} />
+
+      <Section label="2. Primer goleador del partido" points={25} real={results?.first_scorer} realLabel={(v) => v === "no_goal" ? "Sin goles" : String(v)} score={breakdownMap.get("first_scorer")}>
         <select value={pick.first_scorer ?? ""} onChange={(e) => set("first_scorer", e.target.value || null)} disabled={isLocked}
           className="input w-full text-sm">
           <option value="">— Elegí —</option>
@@ -143,7 +155,9 @@ export default function FinalPage() {
         </select>
       </Section>
 
-      <Section label="3. Total de goles" points={10} pointsExtra="+10 exacto" real={results?.total_goals_exact !== null && results?.total_goals_exact !== undefined ? String(results.total_goals_exact) : null}>
+      <Section label="3. Total de goles" points={10} pointsExtra="+10 exacto"
+        real={results?.total_goals_exact !== null && results?.total_goals_exact !== undefined ? String(results.total_goals_exact) : null}
+        score={breakdownMap.get("total_goals_range")} scoreExtra={breakdownMap.get("total_goals_exact")}>
         <div className="grid grid-cols-3 gap-1">
           {TOTAL_GOALS_RANGES.map((r) => (
             <button key={r} disabled={isLocked}
@@ -162,7 +176,7 @@ export default function FinalPage() {
         </div>
       </Section>
 
-      <Section label="4. ¿Cómo se define?" points={15} real={results?.how_defined} realLabel={howLabel}>
+      <Section label="4. ¿Cómo se define?" points={15} real={results?.how_defined} realLabel={howLabel} score={breakdownMap.get("how_defined")}>
         <div className="grid grid-cols-3 gap-1">
           {HOW_DEFINED.map((h) => (
             <button key={h} disabled={isLocked}
@@ -174,9 +188,9 @@ export default function FinalPage() {
         </div>
       </Section>
 
-      <SectionYesNo label="5. ¿Habrá gol después del minuto 85?" points={10} value={pick.goal_after_85} onChange={(v) => set("goal_after_85", v)} disabled={isLocked} real={results?.goal_after_85} />
+      <SectionYesNo label="5. ¿Habrá gol después del minuto 85?" points={10} value={pick.goal_after_85} onChange={(v) => set("goal_after_85", v)} disabled={isLocked} real={results?.goal_after_85} score={breakdownMap.get("goal_after_85")} />
 
-      <Section label="6. Total de tiros de esquina" points={10} real={results?.corners_range}>
+      <Section label="6. Total de tiros de esquina" points={10} real={results?.corners_range} score={breakdownMap.get("corners_range")}>
         <div className="grid grid-cols-3 gap-1">
           {CORNERS_RANGES.map((r) => (
             <button key={r} disabled={isLocked}
@@ -188,11 +202,11 @@ export default function FinalPage() {
         </div>
       </Section>
 
-      <SectionYesNo label="7. ¿Habrá tarjeta roja?" points={10} value={pick.red_card} onChange={(v) => set("red_card", v)} disabled={isLocked} real={results?.red_card} />
-      <SectionYesNo label="8. ¿Habrá gol de cabeza?" points={10} value={pick.header_goal} onChange={(v) => set("header_goal", v)} disabled={isLocked} real={results?.header_goal} />
-      <SectionYesNo label="9. ¿Se cobrará algún penal?" points={10} value={pick.penalty_scored} onChange={(v) => set("penalty_scored", v)} disabled={isLocked} real={results?.penalty_scored} />
+      <SectionYesNo label="7. ¿Habrá tarjeta roja?" points={10} value={pick.red_card} onChange={(v) => set("red_card", v)} disabled={isLocked} real={results?.red_card} score={breakdownMap.get("red_card")} />
+      <SectionYesNo label="8. ¿Habrá gol de cabeza?" points={10} value={pick.header_goal} onChange={(v) => set("header_goal", v)} disabled={isLocked} real={results?.header_goal} score={breakdownMap.get("header_goal")} />
+      <SectionYesNo label="9. ¿Se cobrará algún penal?" points={10} value={pick.penalty_scored} onChange={(v) => set("penalty_scored", v)} disabled={isLocked} real={results?.penalty_scored} score={breakdownMap.get("penalty_scored")} />
 
-      <Section label="10. MVP del partido" points={10} real={results?.mvp}>
+      <Section label="10. MVP del partido" points={10} real={results?.mvp} score={breakdownMap.get("mvp")}>
         <select value={pick.mvp ?? ""} onChange={(e) => set("mvp", e.target.value || null)} disabled={isLocked}
           className="input w-full text-sm">
           <option value="">— Elegí —</option>
@@ -208,12 +222,12 @@ export default function FinalPage() {
         <div className="text-[10px] font-black tracking-widest text-csh-yellow">🎲 EXTRAS DIVERTIDAS · +55 PTS</div>
       </div>
 
-      <SectionYesNo label="11. ⚡ ¿Gol en los primeros 15 minutos?" points={10} value={pick.goal_first_15} onChange={(v) => set("goal_first_15", v)} disabled={isLocked} real={results?.goal_first_15} />
-      <SectionYesNo label="12. 🎩 ¿Habrá un hat-trick? (3+ goles del mismo)" points={15} value={pick.hat_trick} onChange={(v) => set("hat_trick", v)} disabled={isLocked} real={results?.hat_trick} />
-      <SectionYesNo label="13. 🐐 ¿Messi anota gol?" points={10} value={pick.messi_scores} onChange={(v) => set("messi_scores", v)} disabled={isLocked} real={results?.messi_scores} />
-      <SectionYesNo label="14. 🤦 ¿Habrá autogol?" points={10} value={pick.own_goal} onChange={(v) => set("own_goal", v)} disabled={isLocked} real={results?.own_goal} />
+      <SectionYesNo label="11. ⚡ ¿Gol en los primeros 15 minutos?" points={10} value={pick.goal_first_15} onChange={(v) => set("goal_first_15", v)} disabled={isLocked} real={results?.goal_first_15} score={breakdownMap.get("goal_first_15")} />
+      <SectionYesNo label="12. 🎩 ¿Habrá un hat-trick? (3+ goles del mismo)" points={15} value={pick.hat_trick} onChange={(v) => set("hat_trick", v)} disabled={isLocked} real={results?.hat_trick} score={breakdownMap.get("hat_trick")} />
+      <SectionYesNo label="13. 🐐 ¿Messi anota gol?" points={10} value={pick.messi_scores} onChange={(v) => set("messi_scores", v)} disabled={isLocked} real={results?.messi_scores} score={breakdownMap.get("messi_scores")} />
+      <SectionYesNo label="14. 🤦 ¿Habrá autogol?" points={10} value={pick.own_goal} onChange={(v) => set("own_goal", v)} disabled={isLocked} real={results?.own_goal} score={breakdownMap.get("own_goal")} />
 
-      <Section label="15. 🟨 Total de tarjetas amarillas" points={10} real={results?.yellow_cards_range}>
+      <Section label="15. 🟨 Total de tarjetas amarillas" points={10} real={results?.yellow_cards_range} score={breakdownMap.get("yellow_cards_range")}>
         <div className="grid grid-cols-4 gap-1">
           {YELLOW_CARDS_RANGES.map((r) => (
             <button key={r} disabled={isLocked}
@@ -272,35 +286,56 @@ function blankPick(userId: string): FinalPick {
   };
 }
 
-function Section({ label, points, pointsExtra, real, realLabel, children }: {
+function Section({ label, points, pointsExtra, real, realLabel, score, scoreExtra, children }: {
   label: string; points: number; pointsExtra?: string;
   real?: unknown; realLabel?: (v: unknown) => string;
+  score?: { points: number; max: number };
+  scoreExtra?: { points: number; max: number };
   children: React.ReactNode;
 }) {
+  // Badge de resultado del pick, si ya tenemos scoring
+  const hasScore = score !== undefined;
+  const won = hasScore && score.points > 0;
+  const wonExtra = scoreExtra !== undefined && scoreExtra.points > 0;
+  const totalWon = (score?.points ?? 0) + (scoreExtra?.points ?? 0);
+  const totalMax = (score?.max ?? points) + (scoreExtra?.max ?? 0);
   return (
-    <div className="card p-3">
+    <div className={`card p-3 ${hasScore ? (won ? "border-green-500/60" : "border-red-500/40") : ""}`}>
       <div className="flex items-start justify-between mb-2 gap-2">
         <div className="text-sm font-bold flex-1">{label}</div>
-        <div className="text-[10px] font-bold text-csh-yellow whitespace-nowrap">
-          {points} pts{pointsExtra ? ` ${pointsExtra}` : ""}
-        </div>
+        {hasScore ? (
+          <div className={`text-[10px] font-black whitespace-nowrap px-2 py-1 rounded-full ${
+            won ? "bg-green-500 text-black" : "bg-red-500/30 text-red-300"
+          }`}>
+            {won ? "✅" : "❌"} {totalWon}/{totalMax} pts
+          </div>
+        ) : (
+          <div className="text-[10px] font-bold text-csh-yellow whitespace-nowrap">
+            {points} pts{pointsExtra ? ` ${pointsExtra}` : ""}
+          </div>
+        )}
       </div>
       {children}
       {real !== null && real !== undefined && (
-        <div className="mt-2 text-[10px] text-csh-yellow font-bold border-t border-[var(--border)] pt-1">
-          Real: {realLabel ? realLabel(real) : String(real)}
+        <div className="mt-2 text-[11px] border-t border-[var(--border)] pt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+          <span><span className="text-[var(--muted)]">Real:</span> <b className="text-csh-yellow">{realLabel ? realLabel(real) : String(real)}</b></span>
+          {scoreExtra && (
+            <span className={wonExtra ? "text-green-400 font-bold" : "text-red-400/70"}>
+              {wonExtra ? "✅" : "❌"} Bonus exacto: {scoreExtra.points}/{scoreExtra.max}
+            </span>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function SectionYesNo({ label, points, value, onChange, disabled, real }: {
+function SectionYesNo({ label, points, value, onChange, disabled, real, score }: {
   label: string; points: number; value: boolean | null; onChange: (v: boolean) => void;
-  disabled: boolean; real?: boolean | null;
+  disabled: boolean; real?: boolean | null; score?: { points: number; max: number };
 }) {
   return (
-    <Section label={label} points={points} real={real} realLabel={(v) => v ? "Sí" : "No"}>
+    <Section label={label} points={points} real={real} realLabel={(v) => v ? "Sí" : "No"} score={score}>
       <div className="grid grid-cols-2 gap-1">
         <button disabled={disabled} onClick={() => onChange(true)}
           className={`py-2 rounded-lg text-xs font-bold ${value === true ? "bg-csh-red text-white" : "bg-[var(--surface-2)] text-[var(--muted)]"}`}>
