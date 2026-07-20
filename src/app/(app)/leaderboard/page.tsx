@@ -52,12 +52,13 @@ export default function LeaderboardPage() {
       return out;
     }
 
-    const [{ data: lb }, { data: w }, { data: us }, preds, { data: gpicks }, { data: ms }, ac, cm, mc] = await Promise.all([
+    const [{ data: lb }, { data: w }, { data: us }, preds, { data: gpicks }, { data: fpicks }, { data: ms }, ac, cm, mc] = await Promise.all([
       supabase.from("ed26_calicas_leaderboard").select("*").order("total_points", { ascending: false }),
       supabase.from("ed26_calicas_phase_winners").select("phase, user_id, points"),
       supabase.from("ed26_calicas_users").select("id, display_name, avatar_emoji"),
       fetchAllPredictions(),
       supabase.from("ed26_calicas_group_picks").select("user_id, points"),
+      supabase.from("ed26_calicas_final_picks").select("user_id, points"),
       supabase.from("ed26_calicas_matches").select("phase, status, finished, kickoff_utc"),
       fetchAllClans(),
       fetchClanMembers(),
@@ -80,6 +81,12 @@ export default function LeaderboardPage() {
     const groupMap = pp.get("group")!;
     for (const g of ((gpicks as GroupPickRow[]) ?? [])) {
       groupMap.set(g.user_id, (groupMap.get(g.user_id) ?? 0) + (g.points ?? 0));
+    }
+    // Bonus final: sumamos los puntos de picks especiales de la final
+    // a la fase "final" para que aparezcan en la Tabla por Fase.
+    const finalMap = pp.get("final")!;
+    for (const f of ((fpicks as GroupPickRow[]) ?? [])) {
+      finalMap.set(f.user_id, (finalMap.get(f.user_id) ?? 0) + (f.points ?? 0));
     }
     setPhasePoints(pp);
 
@@ -125,6 +132,7 @@ export default function LeaderboardPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_predictions" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_phase_winners" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_group_picks" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_final_picks" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_clans" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "ed26_calicas_clan_members" }, () => load())
       .subscribe();
